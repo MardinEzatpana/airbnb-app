@@ -1,6 +1,7 @@
 'use client';
 
 
+import axios from "axios";
 import { AiFillGithub } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import useRegisterModal from "@/app/hooks/useRegisterModal";
@@ -8,10 +9,47 @@ import Heading from "../common/Heading";
 import Input from "../common/Input";
 import Button from "../common/Button";
 import Modal from "./Modal";
+import { useCallback, useState } from "react";
+import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 
 const RegisterModal= () => {
   const registerModal = useRegisterModal();
+  const [isLoading, setIsLoading] = useState(false);
 
+  const { 
+    register, 
+    handleSubmit,
+    formState: {
+      errors,
+    },
+  } = useForm<FieldValues>({
+    defaultValues: {
+      name: '',
+      email: '',
+      password: ''
+    },
+  });
+
+  const onSubmit: SubmitHandler<FieldValues> = (data) => {
+    setIsLoading(true);
+
+    axios.post('/api/register', data)
+    .then(() => {
+      toast.success('Registered!');
+      registerModal.onClose();
+    })
+    .catch((error) => {
+      toast.error(error);
+    })
+    .finally(() => {
+      setIsLoading(false);
+    })
+  }
+
+  const onToggle = useCallback(() => {
+    registerModal.onClose();
+  }, [registerModal])
 
   const bodyContent = (
     <div className="flex flex-col gap-4">
@@ -22,17 +60,26 @@ const RegisterModal= () => {
       <Input
         id="email"
         label="Email"
+        disabled={isLoading}
+        register={register}
+        errors={errors}
         required
       />
       <Input
         id="name"
         label="Name"
+        disabled={isLoading}
+        register={register}
+        errors={errors}
         required
       />
       <Input
         id="password"
         label="Password"
         type="password"
+        disabled={isLoading}
+        register={register}
+        errors={errors}
         required
       />
     </div>
@@ -51,7 +98,7 @@ const RegisterModal= () => {
         outline 
         label="Continue with Github"
         icon={AiFillGithub}
-        onClick={() => {}} 
+        onClick={() => {}}
       />
       <div 
         className="
@@ -63,6 +110,7 @@ const RegisterModal= () => {
       >
         <p>Already have an account?
           <span 
+            onClick={onToggle} 
             className="
               text-neutral-800
               cursor-pointer 
@@ -76,12 +124,12 @@ const RegisterModal= () => {
 
   return (
     <Modal
-      disabled={false}
+      disabled={isLoading}
       isOpen={registerModal.isOpen}
       title="Register"
       actionLabel="Continue"
       onClose={registerModal.onClose}
-      onSubmit={()=>{}}
+      onSubmit={handleSubmit(onSubmit)}
       body={bodyContent}
       footer={footerContent}
     />
